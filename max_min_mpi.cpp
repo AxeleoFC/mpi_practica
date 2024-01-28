@@ -23,6 +23,7 @@ int minNumero(int* lista, int tamanio){
     return min;
 }
 
+//esto es de punto a punto
 int main(int argc, char** argv){
     MPI_Init(&argc, &argv);
 

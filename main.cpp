@@ -1,43 +1,55 @@
 #include <iostream>
+#include <vector>
+#include <cstdlib>
 #include <mpi.h>
+
+int max(std::vector<int> lista){
+    int max=lista[0];
+    for (int i = 1; i < lista.size(); ++i) {
+        if(max<lista[i]){
+            max=lista[i];
+        }
+    }
+    return max;
+}
 
 int main(int argc, char** argv){
     MPI_Init(&argc, &argv);
 
     int rank, nprocs;
+
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-    const int tamanioLista=12;
+    int tamanioLista=12;
     int numeros[tamanioLista];
-    int sumaLocal=0;
-    int sumaGlobal=0;
 
-    for (int i = 0; i < tamanioLista; ++i) {
-        numeros[i]=i+1;
-    }
+    int max;
 
-    //
-    if(rank!=0){
-        int inicio=rank*(tamanioLista/nprocs);
-        int fin=(rank+1)*(tamanioLista/nprocs);
-        for (int i = inicio; i < fin; ++i) {
-            sumaLocal+=numeros[i];
+    if(rank==0){
+        std::printf("Rank_%d =",rank);
+        for (int i = 0; i < tamanioLista; ++i) {
+            int numero = rand() % 1000;
+            std::printf("[%d],",numero);
+            numeros[i]=numero;
         }
-        MPI_Send(&sumaLocal, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-    }else{
-        std::printf("Numero de proccesos ===> %d \n", nprocs);
-        int inicio=0;
-        int fin=(rank+1)*(tamanioLista/nprocs);
-        for (int i = inicio; i < fin; ++i) {
-            sumaLocal+=numeros[i];
-        }
-        sumaGlobal+=sumaLocal;
+        std::printf("\n");
+        int block_size=(tamanioLista/nprocs);
         for (int i = 1; i < nprocs; ++i) {
-            MPI_Recv(&sumaLocal, 1, MPI_INT, i,0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-            sumaGlobal+=sumaLocal;
+            int inicio=i*block_size;
+            MPI_Send(&numeros[inicio], block_size, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
-        std::printf("Rank_%d suma de numero 1...%d  global===>%d \n",rank,tamanioLista,sumaGlobal);
+
+    }else{
+        int block_size=(tamanioLista/nprocs);
+        MPI_Recv(&numeros,block_size, MPI_INT,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        std::printf("Rank_%d =",rank);
+
+        for (int i = 0; i < block_size; ++i) {
+            std::printf("[%d],",numeros[i]);
+        }
+        std::printf("\n");
+
     }
 
     MPI_Finalize();

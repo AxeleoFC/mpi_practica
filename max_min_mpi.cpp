@@ -32,9 +32,8 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-    int tamanioLista = 12;
+    int tamanioLista = 15;
     std::vector<int> numeros(tamanioLista);
-    //int numeros[tamanioLista];
 
     int max;
     int min;
@@ -47,21 +46,23 @@ int main(int argc, char** argv) {
             numeros[i] = numero;
         }
         std::printf("\n");
-        int block_size = (tamanioLista / nprocs);
         for (int i = 1; i < nprocs; ++i) {
-            int inicio = i * block_size;
+            int block_size= (tamanioLista)/(nprocs);
+            int inicio=i*block_size;
+            if(i==nprocs-1){
+                int residuo = tamanioLista % nprocs;
+                block_size=block_size+residuo;
+            }
             MPI_Send(&numeros[inicio], block_size, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
 
         int max_parciales[nprocs];
         int min_parciales[nprocs];
-        max_parciales[0] = maxNumero(numeros.data(), block_size);
-        min_parciales[0] = minNumero(numeros.data(), block_size);
+        max_parciales[0] = maxNumero(numeros.data(),  (tamanioLista)/(nprocs));
+        min_parciales[0] = minNumero(numeros.data(),  (tamanioLista)/(nprocs));
         for (int i = 1; i < nprocs; ++i) {
             MPI_Recv(&max_parciales[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            std::printf("Rank=%d Max parcial=%d\n", i, max_parciales[i]);
             MPI_Recv(&min_parciales[i], 1, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            std::printf("Rank=%d Min parcial=%d\n", i, min_parciales[i]);
         }
         max = maxNumero(max_parciales, nprocs);
         min = minNumero(min_parciales, nprocs);
@@ -69,8 +70,11 @@ int main(int argc, char** argv) {
         std::printf("Minimo Total=%d\n", min);
 
     } else {
-        int block_size = (tamanioLista / nprocs);
-
+        int block_size= (tamanioLista)/(nprocs);
+        if (rank==nprocs-1){
+            int residuo = tamanioLista % nprocs;
+            block_size=block_size+residuo;
+        }
         MPI_Recv(numeros.data(), block_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::printf("Rank_%d =", rank);
 
@@ -79,10 +83,7 @@ int main(int argc, char** argv) {
         }
         std::printf("\n");
         int max_parcial = maxNumero(numeros.data(), block_size);
-        std::printf("Max parcial=%d,", max_parcial);
-        std::printf("\n");
         MPI_Send(&max_parcial, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-
         int min_parcial = minNumero(numeros.data(), block_size);
         MPI_Send(&min_parcial, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }

@@ -56,7 +56,7 @@ int main(int argc, char** argv){
         min_parciales[0]= minNumero(numeros.data(),block_size);
 
         MPI_Gather(MPI_IN_PLACE, 0, MPI_INT, max_parciales, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Gather(MPI_IN_PLACE, 1, MPI_INT, min_parciales, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Gather(MPI_IN_PLACE, 0, MPI_INT, min_parciales, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         max= maxNumero(max_parciales, nprocs);
         min= minNumero(min_parciales, nprocs);
